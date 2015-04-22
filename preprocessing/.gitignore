@@ -4,3 +4,4 @@ twitterscraper/config.py
 venv
 *.pickle
 *.pyc
+*.json

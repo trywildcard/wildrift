@@ -2,9 +2,10 @@
 
 import databench
 
-import pickle
+import json
+# import pickle
 from pprint import pprint
-from twitterscraper import TwitterScraper, User, Tweet
+# from twitterscraper import TwitterScraper
 
 
 class Analysis(databench.Analysis):
@@ -13,23 +14,28 @@ class Analysis(databench.Analysis):
         """Run as soon as a browser connects to this."""
         self.emit('log', 'backend is connected and initialized')
 
+        # self.emit('graph', {
+        #     'nodes': [
+        #         {'name': '@trywildcard'},
+        #         {'name': '@jordancooper'},
+        #         {'name': '@petkanics'},
+        #         {'name': '@ericxtang'},
+        #     ],
+        #     'links': [
+        #         {'source': 0, 'target': 1, 'type': 'follow'},
+        #         {'source': 0, 'target': 2, 'type': 'follow'},
+        #         {'source': 0, 'target': 3, 'type': 'follow'},
+        #     ]
+        # })
+
         # t = TwitterScraper()
         # t.scrape()
         # pprint([unicode(u) for u in t.load()['users']])
 
-        self.emit('graph', {
-            'nodes': [
-                {'name': 'trywildcard'},
-                {'name': 'jordancooper'},
-                {'name': 'petkanics'},
-                {'name': 'ericxtang'},
-            ],
-            'links': [
-                {'source': 0, 'target': 1, 'type': 'follow'},
-                {'source': 0, 'target': 2, 'type': 'follow'},
-                {'source': 0, 'target': 3, 'type': 'follow'},
-            ]
-        })
+        with open('graph.json', 'rb') as f:
+            d = json.load(f)
+            self.emit('graph', d)
+
 
 
 META = databench.Meta('networkd3', __name__, __doc__, Analysis)

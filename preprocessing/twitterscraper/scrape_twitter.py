@@ -1,11 +1,12 @@
 from __future__ import absolute_import
 
+import json
 import pickle
 import twitter
 import networkx
 from pprint import pprint
 
-from . import config
+import config
 
 
 class Tweet(object):
@@ -86,7 +87,23 @@ class TwitterScraper(object):
         with open(filename, 'rb') as f:
             return pickle.load(f)
 
+    def graph_json(self, data):
+        # print(data['users'][0])
+        nodes = [{'name': d.username, 'type': 'person'} for d in data['users']]
+        nodes += [{'name': t.status['text'], 'type': 'tweet'} for d in data['users'] for t in d.tweets]
+        node_names = [n['name'] for n in nodes]
+        # construct links
+        links = [{'source': node_names.index(d.username),
+                  'target': node_names.index(t.status['text']),
+                  'type': 'author'}
+                 for d in data['users'] for t in d.tweets]
+        print(json.dumps({
+            'nodes': nodes,
+            'links': links,
+        }))
+
 if __name__ == '__main__':
     t = TwitterScraper()
     # t.scrape()
-    pprint([unicode(u) for u in t.load()['users']])
+    # pprint([unicode(u) for u in t.load()['users']])
+    t.graph_json(t.load())
