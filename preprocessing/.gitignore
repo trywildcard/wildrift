@@ -1,0 +1,6 @@
+.DS_Store
+twitterscraper/config.py
+
+venv
+*.pickle
+*.pyc

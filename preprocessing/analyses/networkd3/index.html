@@ -1,0 +1,122 @@
+<!-- This is an HTML file that gets processed by Jinja2
+(http://jinja.pocoo.org/docs/dev/). Jinja2 block commands are included in
+curly braces and percent signs and inline commands in double angular brackets.
+Everything outside these commands is just plain HTML. -->
+{% from 'macros.html' import include_md %}
+{% extends "base.html" %}
+
+
+{% block head %}
+<style>
+
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.link {
+  stroke: #999;
+  stroke-opacity: .6;
+}
+
+</style>
+{% endblock %}
+
+
+<!-- CHANGEME. This sets the content of the HTML <title> element. -->
+{% block title %}Networkd3{% endblock %}
+
+
+
+{% block content %}
+<!-- The description of the analysis is in README.md. The macro include_md()
+pulls that description in and converts it to html to be shown also here. -->
+[[ include_md('networkd3/README.md') ]]
+
+<hr />
+<!-- CHANGEME. Put your analysis HTML here. -->
+<h3>Analysis Output</h3>
+
+<svg id="canvas" width="800" height="300" />
+
+
+<hr />
+<!-- This log output below is just nice to have when starting to design an
+analysis. Feel free to delete the line below. -->
+<h3>Log</h3>
+<pre id="log"></pre>
+{% endblock content %}
+
+
+
+{% block footerscripts %}
+<!-- CHANGEME.
+    Add a js library (put my-library.js into analyses/networkd3/):
+    <script src="/networkd3/static/my-library.js"></script>
+-->
+<script>
+  var databench = Databench();
+  var graph = Graph('canvas');
+
+  databench.on('graph', function(data) {
+      graph(data);
+  });
+
+
+  // define how to draw graph with d3.js
+  function Graph(id) {
+      var svg = d3.select('#'+id),
+          height = parseFloat(svg.attr('height')),
+          width = parseFloat(svg.attr('width'));
+
+      var color = d3.scale.category20();
+
+      var force = d3.layout.force()
+          .charge(-120)
+          .linkDistance(30)
+          .size([width, height]);
+
+
+      return function(graph) {
+        console.log(graph);
+        force
+            .nodes(graph.nodes)
+            .links(graph.links)
+            .start();
+
+        var link = svg.selectAll(".link")
+            .data(graph.links)
+          .enter().append("line")
+            .attr("class", "link")
+            .style("stroke-width", function(d) {
+              if (d.type == 'follow') return 2.0;
+              return 1.0;
+            });
+
+        var node = svg.selectAll(".node")
+            .data(graph.nodes)
+          .enter().append("circle")
+            .attr("class", "node")
+            .attr("r", 5)
+            .style("fill", function(d) {
+              return color(7);
+              // return color(d.group);
+            })
+            .call(force.drag);
+
+        node.append("title")
+            .text(function(d) { return d.name; });
+
+        force.on("tick", function() {
+          link.attr("x1", function(d) { return d.source.x; })
+              .attr("y1", function(d) { return d.source.y; })
+              .attr("x2", function(d) { return d.target.x; })
+              .attr("y2", function(d) { return d.target.y; });
+
+          node.attr("cx", function(d) { return d.x; })
+              .attr("cy", function(d) { return d.y; });
+        });
+      };
+  }
+</script>
+{% endblock footerscripts %}
