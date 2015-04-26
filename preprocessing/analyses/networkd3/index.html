@@ -14,9 +14,10 @@ Everything outside these commands is just plain HTML. -->
   stroke-width: 1.5px;
 }
 
-.link {
-  stroke: #999;
-  stroke-opacity: .6;
+text {
+  fill: #000;
+  /*stroke: #fff;*/
+  stroke-width: 0.0;
 }
 
 </style>
@@ -37,7 +38,7 @@ pulls that description in and converts it to html to be shown also here. -->
 <!-- CHANGEME. Put your analysis HTML here. -->
 <h3>Analysis Output</h3>
 
-<svg id="canvas" width="1200" height="800" />
+<svg id="canvas" width="1600" height="1600" />
 
 
 <hr />
@@ -62,7 +63,6 @@ analysis. Feel free to delete the line below. -->
       graph(data);
   });
 
-
   // define how to draw graph with d3.js
   function Graph(id) {
       var svg = d3.select('#'+id),
@@ -72,8 +72,14 @@ analysis. Feel free to delete the line below. -->
       var color = d3.scale.category20();
 
       var force = d3.layout.force()
-          .charge(-5)
+          .charge(-20)
           .linkDistance(15)
+          .linkStrength(function(d) {
+            if (d.type == 'colleague') return 0.01;
+            if (d.type == 'retweet') return 0.1;
+            if (d.type == 'mention') return 0.5;
+            return 1.0;
+          })
           .size([width, height]);
 
 
@@ -88,6 +94,14 @@ analysis. Feel free to delete the line below. -->
             .data(graph.links)
           .enter().append("line")
             .attr("class", "link")
+            .style("stroke", function(d) {
+              if (d.type == 'colleague') return color(7);
+              return '#999';
+            })
+            .style("stroke-opacity", function(d) {
+              if (d.type == 'colleague') return 0.1;
+              return 0.4;
+            })
             .style("stroke-width", function(d) {
               if (d.type == 'follow') return 2.0;
               return 1.0;
@@ -95,15 +109,52 @@ analysis. Feel free to delete the line below. -->
 
         var node = svg.selectAll(".node")
             .data(graph.nodes)
-          .enter().append("circle")
+          .enter()
+            .append("g")
             .attr("class", "node")
-            .attr("r", function(d) {
-              if (d.type == 'person') return 5.0;
-              return 2.0;
-            })
-            .style("fill", function(d) {
-              return color(7);
-              // return color(d.group);
+            // .attr('transform', function(d) { return 'translate('+x(d)+',0)'; })
+            .each(function(d, i) {
+              d3.select(this)
+                  .append("circle")
+                  // .attr("class", "node")
+                  .attr("r", function(d) {
+                    if (d.type == 'person') {
+                      if (d.followers_count > 20000) return 15.0;
+                      if (d.followers_count > 5000) return 10.0;
+                      if (d.followers_count > 500) return 7.0;
+                      return 5.0;
+                    }else if (d.type == 'person-non-wildcard') {
+                      return 3.0;
+                    }else if (d.type == 'tweet') {
+                      if (d.favorite_count + d.retweet_count > 1000) return 10.0
+                      if (d.favorite_count + d.retweet_count > 200) return 8.0
+                      if (d.favorite_count + d.retweet_count > 50) return 5.0
+                    }
+                    return 2.0;
+                  })
+                  .style("fill", function(d) {
+                    if (d.type == 'person-non-wildcard') return 'black';
+                    if (d.type == 'tweet') return 'orange';
+                    return color(7);
+                    // return color(d.group);
+                  });
+
+              if (d.type == 'person') {
+                // d3.select(this)
+                //     .append('image')
+                //     .attr('width', 50).attr('height', 50)
+                //     .attr('x', 17).attr('y', -25)
+                //     // .style("opacity", "0.7")
+                //     .attr('xlink:href', d.profile_image_url);
+                // d3.uri(d.profile_image_url, function(data) {
+                //   $(this).find('image').attr("xlink:href", "data:image/png;base64," + data);
+                // });
+
+                d3.select(this)
+                  .append('text')
+                  .attr('x', 17).attr('y', 0)
+                  .text(function(d) { return d.name; });
+              }
             })
             .call(force.drag);
 
@@ -116,8 +167,9 @@ analysis. Feel free to delete the line below. -->
               .attr("x2", function(d) { return d.target.x; })
               .attr("y2", function(d) { return d.target.y; });
 
-          node.attr("cx", function(d) { return d.x; })
-              .attr("cy", function(d) { return d.y; });
+          node.attr('transform', function(d) {
+            return 'translate('+d.x+','+d.y+')';
+          });
         });
       };
   }

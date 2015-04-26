@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import json
 import pickle
 import twitter
+import datetime
 import networkx
 from pprint import pprint
 
@@ -50,6 +51,16 @@ class TwitterScraper(object):
             u.add_tweet(Tweet(u, s))
         return u
 
+    def filter_tweets(self, data, recency=None):
+        if not recency:
+            recency = datetime.datetime.now()-datetime.timedelta(days=60)
+        # print(datetime.datetime.strptime(data['users'][0].tweets[0].status['created_at'], '%a %b %d %H:%M:%S +0000 %Y'))
+        for u in data['users']:
+            # for t in u.tweets:
+            #     print(datetime.datetime.strptime(t.status['created_at'], '%a %b %d %H:%M:%S +0000 %Y'))
+            u.tweets = [t for t in u.tweets
+                        if datetime.datetime.strptime(t.status['created_at'], '%a %b %d %H:%M:%S +0000 %Y') > recency]
+
     def scrape(self, filename='scraped.pickle'):
         raw_input('About to scrape and overwrite old scrape. '
                   'Press enter to continue.')
@@ -88,15 +99,45 @@ class TwitterScraper(object):
             return pickle.load(f)
 
     def graph_json(self, data):
-        # print(data['users'][0])
-        nodes = [{'name': d.username, 'type': 'person'} for d in data['users']]
-        nodes += [{'name': t.status['text'], 'type': 'tweet'} for d in data['users'] for t in d.tweets]
-        node_names = [n['name'] for n in nodes]
+        # pprint(unicode(data['users'][0].tweets[0].status['entities']['user_mentions']))
+        nodes = [{'name': d.username,
+                  'type': 'person',
+                  'followers_count': d.tweets[0].status['user']['followers_count'] if d.tweets else 0,
+                  'description': d.tweets[0].status['user']['description'] if d.tweets else '',
+                  'profile_image_url': d.tweets[0].status['user']['profile_image_url'] if d.tweets else ''}
+                 for d in data['users']]
+        nodes += [{'name': '@'+m['screen_name'],
+                   'type': 'person-non-wildcard'}
+                  for d in data['users'] for t in d.tweets
+                  for m in t.status['entities']['user_mentions']]
+        nodes += [{'name': t.status['text'],
+                   'type': 'tweet',
+                   'favorite_count': t.status['favorite_count'],
+                   'retweet_count': t.status['retweet_count']}
+                  for d in data['users'] for t in d.tweets]
+        # deduplicate and build node_names
+        node_names = []
+        nodes_new = []
+        for n in nodes:
+            if n['name'] in node_names:
+                continue
+            node_names.insert(0, n['name'])
+            nodes_new.insert(0, n)
+        nodes = nodes_new
         # construct links
         links = [{'source': node_names.index(d.username),
                   'target': node_names.index(t.status['text']),
-                  'type': 'author'}
+                  'type': 'author' if not t.status['retweeted'] else 'retweet'}
                  for d in data['users'] for t in d.tweets]
+        links += [{'source': node_names.index(t.status['text']),
+                   'target': node_names.index('@'+m['screen_name']),
+                   'type': 'mention'}
+                  for d in data['users'] for t in d.tweets for m in t.status['entities']['user_mentions']]
+        # connect the wildcard users
+        links += [{'source': node_names.index(u1.username),
+                   'target': node_names.index(u2.username),
+                   'type': 'colleague'}
+                  for u1 in data['users'] for u2 in data['users']]
         print(json.dumps({
             'nodes': nodes,
             'links': links,
@@ -106,4 +147,6 @@ if __name__ == '__main__':
     t = TwitterScraper()
     # t.scrape()
     # pprint([unicode(u) for u in t.load()['users']])
-    t.graph_json(t.load())
+    data = t.load()
+    t.filter_tweets(data)
+    t.graph_json(data)
