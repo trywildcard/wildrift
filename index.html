@@ -67,85 +67,162 @@
 		var effect = new THREE.VREffect( renderer );
 		effect.setSize( window.innerWidth, window.innerHeight );
 
+		var images = ["cards1.png", "cards2.png", "tweets2.svg"];
+		var backgrounds = ["office.png", "brooklyn.png", "deck.png"]
+		var imgIdx = -1;
+		var backgroundIdx = 0;
+		function updateImage(mode) {
+			scene = new THREE.Scene();
+
+			var circumference = 3.6;
+			var radius = circumference / 3.14 / 2;
+			var height = 0.9;
+			var geometry = new THREE.CylinderGeometry( radius, radius, height, 60, 1, true );
+			geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
+
+			if (mode == 'n') {
+				imgIdx = imgIdx + 1;
+				if (imgIdx >= images.length) {
+					imgIdx = 0;
+				}
+			}
+
+			img = images[imgIdx];
+
+			var material = new THREE.MeshBasicMaterial( { 
+				transparent: true, 
+				side: THREE.DoubleSide,
+				map: THREE.ImageUtils.loadTexture( 'images/' + img )
+			});
+
+			var mesh = new THREE.Mesh( geometry, material );
+			mesh.scale.set( 1.5, 1.5, 1.5 );
+
+			scene.add( mesh );
+			console.log("imgIdx:" + imgIdx);
+
+			var geometry = new THREE.SphereGeometry( 5000, 64, 32 );
+			geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
+
+			/*
+			Create the material we will load our background image into.
+			*/
+
+			if (mode == 'b') {
+				backgroundIdx = backgroundIdx + 1;
+				if (backgroundIdx >= backgrounds.length) {
+					backgroundIdx = 0;
+				}
+			}
+
+			background = backgrounds[backgroundIdx];
+			var material = new THREE.MeshBasicMaterial( {
+				// map: THREE.ImageUtils.loadTexture( 'images/background.png' )
+				map: THREE.ImageUtils.loadTexture( 'images/' + background )
+			} );
+
+			/*
+			Create the mesh of our background from the geometry and material, and add it to the scene.
+			*/
+
+			var mesh = new THREE.Mesh( geometry, material );
+			scene.add( mesh );
+		}
 
 		/*============= START OF MOCKUP-RELATED CODE =============*/
 
 		/*
 		Set up the key measurements of the cylinder that will display our mockup image. It is important to match these measurements to the size of the image, or the surface area of the cylinder will be different from the image, causing it to appear squished or stretched. We start with the circumference of the cylinder. Set it to match the width of the image. Remember that the standard unit of measurement for VR scenes is meters. If our mockup canvas is 360 centimeters wide, for example, we set the circumference value to be 3.6 (360/100).
 		*/
-		var circumference = 3.6;
+		// var circumference = 3.6;
 
-		/*
-		Set up the radius of the cylinder that will display our mockups. We derive the radius from the circumference.
-		*/
-		var radius = circumference / 3.14 / 2;
+		// /*
+		// Set up the radius of the cylinder that will display our mockups. We derive the radius from the circumference.
+		// */
+		// var radius = circumference / 3.14 / 2;
 
-		/*
-		Set up the height of the cylinder that will display our mockups. As with the circumference, we match this value to the height of our mockup, and convert to meters (from 90cm to 0.9 meters)
-		*/
-		var height = 0.9;
+		// /*
+		// Set up the height of the cylinder that will display our mockups. As with the circumference, we match this value to the height of our mockup, and convert to meters (from 90cm to 0.9 meters)
+		// */
+		// var height = 0.9;
 
-		/*
-		Create the geometry for the cylinder object that will display our mockups.
-		Documentation for the THREE.CylinderGeometry class is here: 
-		http://threejs.org/docs/#Reference/Extras.Geometries/CylinderGeometry.
-		The cylinder constructor takes the following arguments:
-		CylinderGeometry(radiusTop, radiusBottom, height, radiusSegments, heightSegments, openEnded).
-		We add 60 radiusSegments to make the cylinder smooth, and leave the top and bottom openEnded.
-		*/
-		var geometry = new THREE.CylinderGeometry( radius, radius, height, 60, 1, true );
+		
+		// Create the geometry for the cylinder object that will display our mockups.
+		// Documentation for the THREE.CylinderGeometry class is here: 
+		// http://threejs.org/docs/#Reference/Extras.Geometries/CylinderGeometry.
+		// The cylinder constructor takes the following arguments:
+		// CylinderGeometry(radiusTop, radiusBottom, height, radiusSegments, heightSegments, openEnded).
+		// We add 60 radiusSegments to make the cylinder smooth, and leave the top and bottom openEnded.
+		
+		// var geometry = new THREE.CylinderGeometry( radius, radius, height, 60, 1, true );
 
-		/*
-		Invert the scale of the geometry on the X axis. This flips the faces of the cylinder so they faces inwards, which has the visible effect of displaying the mockups as we expect: facing inwards and in the correct orientation. Try removing this line to see what happens without flipping the scale.
-		*/
-		geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
+		// /*
+		// Invert the scale of the geometry on the X axis. This flips the faces of the cylinder so they faces inwards, which has the visible effect of displaying the mockups as we expect: facing inwards and in the correct orientation. Try removing this line to see what happens without flipping the scale.
+		// */
+		// geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
 
 		/*
 		Create the material that we will load our mockup into and apply to our cylinder object. We set `transparent` to true, enabling us to optionally use mockups with alpha channels. We set `side` to THREE.DoubleSide, so our material renders facing both inwards and outwards (relative to the  direction of the faces of the cylinder object). By default, materials and the faces of Three.js meshes face outwards and are invisible from the reverse. Setting THREE.DoubleSide ensures the cylinder and it's material will be visibile no matter which direction (inside or out) we are viewing it from. This step is not strictly necessary, since we are actually going to invert the faces of the object to face inwards in a later step, but it is good to be aware of the `side` material attribute and how to define it.
 		We load our mockup as a texture.
 		*/
-		var material = new THREE.MeshBasicMaterial( { 
-			transparent: true, 
-			side: THREE.DoubleSide,
-			map: THREE.ImageUtils.loadTexture( 'images/mockup.png' )
-		});
+		updateImage('n');
+		// var material = new THREE.MeshBasicMaterial( { 
+		// 	transparent: true, 
+		// 	side: THREE.DoubleSide,
+		// 	map: THREE.ImageUtils.loadTexture( 'images/mockup.png' )
+		// });
 
-		/*
-		Create the mesh of our cylinder object from the geometry and material.
-		*/
-		var mesh = new THREE.Mesh( geometry, material );
+		// /*
+		// Create the mesh of our cylinder object from the geometry and material.
+		// */
+		// var mesh = new THREE.Mesh( geometry, material );
 		
-		/*
-		Add our cylinder object to the scene. The default position of elements added to a Three.js scene is 0,0,0, which is also the default position of our scene's camera. So our camera sits inside our cylinder.
-		*/
-		scene.add( mesh );
+		// /*
+		// Add our cylinder object to the scene. The default position of elements added to a Three.js scene is 0,0,0, which is also the default position of our scene's camera. So our camera sits inside our cylinder.
+		// */
+		// scene.add( mesh );
 
 		/*
-		To adjust the distance between our mockups and the user, we can optionally scale our mesh. If we apply 0.5 to the X,Y,Z, for example, the radius shrinks by half, and the mockups become twice as close to our eyes. Because we are scaling proportionally (equal on X,Y,Z) the mockups do not _appear_ any larger, but the stereo effect of the VR headset tells us they are closer. Play with this setting to find a value that you like.
-		*/
-		//mesh.scale.set( 0.5, 0.5, 0.5 );
+		// To adjust the distance between our mockups and the user, we can optionally scale our mesh. If we apply 0.5 to the X,Y,Z, for example, the radius shrinks by half, and the mockups become twice as close to our eyes. Because we are scaling proportionally (equal on X,Y,Z) the mockups do not _appear_ any larger, but the stereo effect of the VR headset tells us they are closer. Play with this setting to find a value that you like.
+		// */
+		// // mesh.scale.set( 0.5, 0.5, 0.5 );
+
+		// /*
+		// Create 3d objects
+		// */
+		// var geometry_cube = new THREE.BoxGeometry( 0.1, 0.1, 0.1 );
+
+		// var material_cube = new THREE.MeshNormalMaterial({
+		// 	transparent: true,
+		// 	side: THREE.DoubleSide
+		// });
+
+		// var material_pie = new THREE.MeshBasicMaterial({
+		// 	transparent: true,
+		// 	map: THREE.ImageUtils.loadTexture( 'images/pie.png' )
+		// });
+
+		// material_pie.map.needsUpdate = true;
+
+		// var cube = new THREE.Mesh( geometry_cube, material_cube );
+		// // var cube = new THREE.Mesh( new THREE.CubeGeometry(300, 300, 300), material_pie );
+		// /*
+		// Position cube mesh
+		// */
+		// cube.overdraw = true;
+		// cube.position.z = -0.3;
+		// cube.position.y = 0.5;
+
+		// /*
+		// Add cube mesh to your three.js scene
+		// */
+		// scene.add( cube );
 
 		/*
 		To optionally add a background image to the scene, create a large sphere and apply a bitmap to it. First, create the geometry for the sphere. The SphereGeometry constructor takes several arguments, but we only need the basic three: radius, widthSegments, and heightSegments. We set radius to a big 5000 meters so the sphere is less likely to occlude other objects in our scene. We set width and height segments to 64 and 32 respectively to make it sphere surface smooth. And we then invert the geometry on the x-axis using THREE.Matrix4().makeScale(), to flip the geometry faces so they face "inwards", as we did with the mockup cylinder.
 		*/
 
-		var geometry = new THREE.SphereGeometry( 5000, 64, 32 );
-		geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
 
-		/*
-		Create the material we will load our background image into.
-		*/
-
-		var material = new THREE.MeshBasicMaterial( {
-			map: THREE.ImageUtils.loadTexture( 'images/background.png' )
-		} );
-
-		/*
-		Create the mesh of our background from the geometry and material, and add it to the scene.
-		*/
-
-		var mesh = new THREE.Mesh( geometry, material );
-		scene.add( mesh );
 
 		/*
 		And that's it! When we load the scene and put on our headset, we should by standing inside our mockup layout, with a distant background image wrapping everything.
@@ -158,6 +235,10 @@
 		Request animation frame loop function
 		*/
 		function animate() {
+			/*
+			Rotate the cube
+			*/
+			// cube.rotation.y += 0.01;
 
 			/*
 			Update VR headset position and apply to camera.
@@ -188,19 +269,22 @@
 		Listen for keyboard events to zero positional sensor or enter full-screen VR mode.
 		*/
 		function onkey(event) {
-	    
-	    if (!(event.metaKey || event.altKey || event.ctrlKey)) {
-				event.preventDefault();
-			}
+		    if (!(event.metaKey || event.altKey || event.ctrlKey)) {
+					event.preventDefault();
+				}
 
-	    if (event.charCode == 'z'.charCodeAt(0)) { // z
-	    	controls.zeroSensor();
-	    } else if (event.charCode == 'f'.charCodeAt(0)) { // f
-	    	effect.setFullScreen( true );
-	    }
-	  };
+		    if (event.charCode == 'z'.charCodeAt(0)) { // z
+		    	controls.zeroSensor();
+		    } else if (event.charCode == 'f'.charCodeAt(0)) { // f
+		    	effect.setFullScreen( true );
+		    } else if (event.charCode == 'n'.charCodeAt(0)) { // n
+		    	updateImage('n');
+		    } else if (event.charCode == 'b'.charCodeAt(0)) { // n
+		    	updateImage('b');
+		    }
+		};
 
-	  window.addEventListener("keypress", onkey, true);
+		window.addEventListener("keypress", onkey, true);
 
 		/*
 		Handle window resizes

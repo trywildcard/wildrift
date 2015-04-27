@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>VR Mockups on Cylinders Boilerplate</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <style>
+            body {
+                background-color: #000;
+                color: #fff;
+                margin: 0px;
+                padding: 0;
+                overflow: hidden;
+            }
+        </style>
+    </head>
+
+    <body>
+
+    </body>
+
+    <!--
+    Three.js 3d library
+    -->
+    <script src="js/three.min.js"></script>
+
+    <!--
+    VRControls.js acquires positional information from connected VR devices and applies the transformations to a Three.js camera object.
+     -->
+    <script src="js/VRControls.js"></script>
+
+    <!--
+    VREffect.js handles stereo camera setup and rendering.
+    -->
+    <script src="js/VREffect.js"></script>
+
+    <script src="js/Detector.js"></script>
+    <script src="js/Stats.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="js/THREEx.KeyboardState.js"></script>
+    <script src="js/THREEx.FullScreen.js"></script>
+    <script src="js/THREEx.WindowResize.js"></script>
+
+    <!-- jQuery code to display an information button and box when clicked. -->
+    <script src="js/jquery-1.9.1.js"></script>
+    <script src="js/jquery-ui.js"></script>
+
+    <script>
+        var clock = new THREE.Clock();
+        var container, scene, camera, renderer, controls, stats;
+        var keyboard = new THREEx.KeyboardState();
+
+        /*
+        Setup Three.js WebGL renderer
+        */
+        var renderer = new THREE.WebGLRenderer( { antialias: true } );
+
+        /*
+        Append the canvas element created by the renderer to document body element.
+        */
+        document.body.appendChild( renderer.domElement );
+
+        /*
+        Create a Three.js scene
+        */
+        var scene = new THREE.Scene();
+
+        /*
+        Create a Three.js camera
+        */
+        var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0, 10000 );
+
+        /*
+        Apply VR headset positional data to camera.
+        */
+        var controls = new THREE.VRControls( camera );
+
+        /*
+        Apply VR stereo rendering to renderer
+        */
+        var effect = new THREE.VREffect( renderer );
+        effect.setSize( window.innerWidth, window.innerHeight );
+
+        // LIGHT
+        var light = new THREE.PointLight(0xffffff);
+        light.position.set(0,250,0);
+        scene.add(light);
+        // FLOOR
+        var floorTexture = new THREE.ImageUtils.loadTexture( 'images/checkerboard.jpg' );
+        floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
+        floorTexture.repeat.set( 10, 10 );
+        var floorMaterial = new THREE.MeshBasicMaterial( { map: floorTexture, side: THREE.DoubleSide } );
+        var floorGeometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
+        var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.position.y = -0.5;
+        floor.rotation.x = Math.PI / 2;
+        scene.add(floor);
+
+        // SKYBOX/FOG
+        var skyBoxGeometry = new THREE.CubeGeometry( 0.1, 0.1, 0.1);
+        var skyBoxMaterial = new THREE.MeshBasicMaterial( { color: 0x9999ff, side: THREE.BackSide } );
+        var skyBox = new THREE.Mesh( skyBoxGeometry, skyBoxMaterial );
+        // scene.add(skyBox);
+        scene.fog = new THREE.FogExp2( 0x9999ff, 0.00025 );
+        
+
+        var runnerTexture = new THREE.ImageUtils.loadTexture( 'images/run.png' );
+        annie = new TextureAnimator( runnerTexture, 10, 1, 10, 75 ); // texture, #horiz, #vert, #total, duration.
+        var runnerMaterial = new THREE.MeshBasicMaterial( { map: runnerTexture, side:THREE.DoubleSide } );
+        var runnerGeometry = new THREE.PlaneGeometry(50, 50, 1, 1);
+        var runner = new THREE.Mesh(runnerGeometry, runnerMaterial);
+        runner.position.set(-100,25,0);
+        scene.add(runner);
+        
+        var explosionTexture = new THREE.ImageUtils.loadTexture( 'images/explosion.jpg' );
+        boomer = new TextureAnimator( explosionTexture, 4, 4, 16, 55 ); // texture, #horiz, #vert, #total, duration.
+        var explosionMaterial = new THREE.MeshBasicMaterial( { map: explosionTexture } );
+        var cubeGeometry = new THREE.CubeGeometry( 0.2, 0.2, 0.2 );
+        cube = new THREE.Mesh( cubeGeometry, explosionMaterial );
+        cube.position.set(0,26,0);
+        scene.add(cube);
+
+
+
+        /*
+        And that's it! When we load the scene and put on our headset, we should by standing inside our mockup layout, with a distant background image wrapping everything.
+        */
+
+        /*
+        Request animation frame loop function
+        */
+        function animate() {
+            update();
+            /*
+            Update VR headset position and apply to camera.
+            */
+            controls.update();
+
+            /*
+            Render the scene through the VREffect.
+            */
+            effect.render( scene, camera );
+
+            requestAnimationFrame( animate );
+        }
+
+        function update() {
+            var delta = clock.getDelta(); 
+
+            annie.update(1000 * delta);
+            boomer.update(1000 * delta);
+            
+            if ( keyboard.pressed("z") ) 
+            { 
+                // do something
+            }
+            
+            controls.update();
+            // stats.update();
+        }
+
+
+        /*
+        Kick off animation loop
+        */
+        animate();
+
+        /*
+        Listen for double click event to enter full-screen VR mode
+        */
+        document.body.addEventListener( 'dblclick', function() {
+            effect.setFullScreen( true );
+        });
+
+        /*
+        Listen for keyboard events to zero positional sensor or enter full-screen VR mode.
+        */
+        function onkey(event) {
+        
+        if (!(event.metaKey || event.altKey || event.ctrlKey)) {
+                event.preventDefault();
+            }
+
+        if (event.charCode == 'z'.charCodeAt(0)) { // z
+            controls.zeroSensor();
+        } else if (event.charCode == 'f'.charCodeAt(0)) { // f
+            effect.setFullScreen( true );
+        }
+      };
+
+      window.addEventListener("keypress", onkey, true);
+
+        /*
+        Handle window resizes
+        */
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            effect.setSize( window.innerWidth, window.innerHeight );
+        }
+
+        window.addEventListener( 'resize', onWindowResize, false );
+
+function TextureAnimator(texture, tilesHoriz, tilesVert, numTiles, tileDispDuration) 
+{   
+    // note: texture passed by reference, will be updated by the update function.
+        
+    this.tilesHorizontal = tilesHoriz;
+    this.tilesVertical = tilesVert;
+    // how many images does this spritesheet contain?
+    //  usually equals tilesHoriz * tilesVert, but not necessarily,
+    //  if there at blank tiles at the bottom of the spritesheet. 
+    this.numberOfTiles = numTiles;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping; 
+    texture.repeat.set( 1 / this.tilesHorizontal, 1 / this.tilesVertical );
+
+    // how long should each image be displayed?
+    this.tileDisplayDuration = tileDispDuration;
+
+    // how long has the current image been displayed?
+    this.currentDisplayTime = 0;
+
+    // which image is currently being displayed?
+    this.currentTile = 0;
+        
+    this.update = function( milliSec )
+    {
+        this.currentDisplayTime += milliSec;
+        while (this.currentDisplayTime > this.tileDisplayDuration)
+        {
+            this.currentDisplayTime -= this.tileDisplayDuration;
+            this.currentTile++;
+            if (this.currentTile == this.numberOfTiles)
+                this.currentTile = 0;
+            var currentColumn = this.currentTile % this.tilesHorizontal;
+            texture.offset.x = currentColumn / this.tilesHorizontal;
+            var currentRow = Math.floor( this.currentTile / this.tilesHorizontal );
+            texture.offset.y = currentRow / this.tilesVertical;
+        }
+    };
+}       
+
+    </script>
+</html>
